@@ -2,14 +2,8 @@
 
 import Button from "@/components/Button";
 import Input from "@/components/Input";
-import Image from "next/image";
 import { styled } from "styled-components";
 import React from "react";
-
-const dollar = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 const Container = styled.div`
   margin: 1em auto;
@@ -23,7 +17,7 @@ const formConfig = [
   { id: "rsu", label: "RSUs (per month)" },
   { id: "eso", label: "ESOs (per month)" },
   { id: "strikePrice", label: "Strike price ($)" },
-  // { id: "currency", label: "Currency (symbol)" },
+  { id: "currency", label: "Currency (symbol)" },
 ] as const;
 type InputId = (typeof formConfig)[number]["id"];
 
@@ -54,39 +48,76 @@ export default function Home() {
   const [asyncError, setAsyncError] = React.useState<string>("");
 
   React.useEffect(() => {
-    const { stock } = values;
-    if (!isNaN(Number(stock))) {
-      setStockValue(Number(stock));
-      setIsLoading(false);
-      return;
-    }
-    fetch(`/stock/${stock}`)
-      .then(async (resp) => {
-        try {
+    const { stock, currency } = values;
+
+    const getStockValue = new Promise<number>((resolve, reject) => {
+      if (!isNaN(Number(stock))) return resolve(Number(stock));
+
+      fetch(`/stock/${stock}`)
+        .then(async (resp) => {
           if (resp.ok) {
             const json = await resp.json();
             const price = json.chart.result[0].meta.regularMarketPrice;
+            if (json.chart.result[0].meta.currency !== "USD") {
+              return reject("Non USD stocks are not supported yet");
+            }
             if (price && typeof price === "number") {
-              setStockValue(price);
+              return resolve(price);
             } else {
-              throw new Error("couldn't get market price");
+              return reject("Unexpected response from stock API");
             }
           } else {
-            throw new Error("resp not ok");
+            return reject("Invalid stock symbol");
           }
-        } catch (err) {
+        })
+        .catch((err) => {
           console.error(err);
-          setAsyncError(`Failed to fetch stock "${stock}`);
-        }
+          return reject(`Unexpected error calling stock API`);
+        });
+    });
+
+    const getCurrencyValue = new Promise<number>((resolve, reject) => {
+      if (!currency) return resolve(1);
+      const curr = currency!.toLowerCase();
+      if (curr === "usd") return resolve(1);
+      fetch(
+        `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd/${curr}.json`
+      )
+        .then(async (resp) => {
+          if (resp.ok) {
+            const json = await resp.json();
+            const conversion = json[curr];
+            if (conversion && typeof conversion === "number") {
+              return resolve(conversion);
+            } else {
+              return reject("Unexpected response from currency API");
+            }
+          } else {
+            return reject("Invalid currency");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          return reject(`Unexpected error calling currency API`);
+        });
+    });
+
+    Promise.all([getStockValue, getCurrencyValue])
+      .then(([stockValue, currencyValue]) => {
+        setStockValue(stockValue);
+        setCurrencyValue(currencyValue);
       })
-      .then(() => {
+      .catch((err) => {
+        setAsyncError(err);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, []);
 
   const outputs = React.useMemo(() => {
-    if (!isLoading) {
-      const { rsu, eso, strikePrice } = values;
+    if (!isLoading && !asyncError) {
+      const { rsu, eso, strikePrice, currency } = values;
 
       if (rsu && isNaN(Number(rsu))) {
         setAsyncError("Invalid RSUs value, please enter number");
@@ -105,14 +136,23 @@ export default function Home() {
         return;
       }
 
-      const rsuValuePerMonth = Number(rsu || 0) * stockValue;
+      const rsuValuePerMonth = currencyValue * Number(rsu || 0) * stockValue;
       const esoValuePerMonth =
-        Number(eso || 0) * (stockValue - Number(strikePrice || 0));
+        currencyValue *
+        Number(eso || 0) *
+        (stockValue - Number(strikePrice || 0));
+
       const perMonth = rsuValuePerMonth + esoValuePerMonth;
       const perYear = 12 * perMonth;
-      return { perMonth, perYear };
+
+      const formatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currency ? currency.toUpperCase() : "USD",
+      });
+
+      return { perMonth, perYear, formatter };
     }
-  }, [values, isLoading, stockValue]);
+  }, [values, isLoading, stockValue, currencyValue]);
 
   return (
     <main>
@@ -132,22 +172,24 @@ export default function Home() {
         <div style={{ height: "4em" }} />
         {isLoading ? (
           <div>Loading...</div>
-        ) : asyncError ? (
-          <div style={{ color: "red" }}>{asyncError}</div>
+        ) : !outputs ? (
+          <div style={{ color: "red" }}>
+            {asyncError || "Unexpected error calculating outputs"}
+          </div>
         ) : (
           <div style={{ fontSize: "1.5em" }}>
             <div>Stock value: ${stockValue}</div>
             <br />
             <div>
               Per month:{" "}
-              {outputs?.perMonth !== undefined
-                ? dollar.format(outputs.perMonth)
+              {outputs.perMonth !== undefined
+                ? outputs.formatter.format(outputs.perMonth)
                 : "?"}
             </div>
             <div>
               Per year:{" "}
-              {outputs?.perYear !== undefined
-                ? dollar.format(outputs.perYear)
+              {outputs.perYear !== undefined
+                ? outputs.formatter.format(outputs.perYear)
                 : "?"}
             </div>
           </div>
