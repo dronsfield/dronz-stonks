@@ -4,12 +4,23 @@ import Button from "@/components/Button";
 import Input from "@/components/Input";
 import { styled } from "styled-components";
 import React from "react";
+import { Label } from "@/components/Label";
 
 const Container = styled.div`
   margin: 1em auto;
   width: 100%;
   max-width: 400px;
   padding: 1em;
+`;
+
+const OutputValue = styled.div`
+  font-size: 1.5em;
+`;
+
+const OutputDetail = styled.div`
+  font-size: 0.8em;
+  opacity: 0.66;
+  margin-top: 0.1em;
 `;
 
 const formConfig = [
@@ -141,8 +152,10 @@ export default function Home() {
         currencyValue *
         Number(eso || 0) *
         (stockValue - Number(strikePrice || 0));
-
       const perMonth = rsuValuePerMonth + esoValuePerMonth;
+
+      const rsuValuePerYear = 12 * rsuValuePerMonth;
+      const esoValuePerYear = 12 * esoValuePerMonth;
       const perYear = 12 * perMonth;
 
       const formatter = new Intl.NumberFormat("en-US", {
@@ -150,7 +163,15 @@ export default function Home() {
         currency: currency ? currency.toUpperCase() : "USD",
       });
 
-      return { perMonth, perYear, formatter };
+      return {
+        rsuValuePerMonth,
+        esoValuePerMonth,
+        perMonth,
+        rsuValuePerYear,
+        esoValuePerYear,
+        perYear,
+        formatter,
+      };
     }
   }, [values, isLoading, stockValue, currencyValue]);
 
@@ -167,9 +188,10 @@ export default function Home() {
               />
             );
           })}
+          <div style={{ height: "0.5em" }} />
           <Button type="submit" children="Submit" />
         </form>
-        <div style={{ height: "4em" }} />
+        <div style={{ height: "2em" }} />
         {isLoading ? (
           <div>Loading...</div>
         ) : !outputs ? (
@@ -177,21 +199,29 @@ export default function Home() {
             {asyncError || "Unexpected error calculating outputs"}
           </div>
         ) : (
-          <div style={{ fontSize: "1.5em" }}>
-            <div>Stock value: ${stockValue}</div>
+          <div>
+            <Label>Stock value</Label>
+            <OutputValue>${stockValue}</OutputValue>
             <br />
-            <div>
-              Per month:{" "}
-              {outputs.perMonth !== undefined
-                ? outputs.formatter.format(outputs.perMonth)
-                : "?"}
-            </div>
-            <div>
-              Per year:{" "}
-              {outputs.perYear !== undefined
-                ? outputs.formatter.format(outputs.perYear)
-                : "?"}
-            </div>
+            <Label>Per year</Label>
+            <OutputValue>
+              {outputs.formatter.format(outputs.perYear)}
+            </OutputValue>
+            <OutputDetail>
+              {outputs.formatter.format(outputs.rsuValuePerYear) +
+                " + " +
+                outputs.formatter.format(outputs.esoValuePerYear)}
+            </OutputDetail>
+            <br />
+            <Label>Per month</Label>
+            <OutputValue>
+              {outputs.formatter.format(outputs.perMonth)}
+            </OutputValue>
+            <OutputDetail>
+              {outputs.formatter.format(outputs.rsuValuePerMonth) +
+                " + " +
+                outputs.formatter.format(outputs.esoValuePerMonth)}
+            </OutputDetail>
           </div>
         )}
       </Container>

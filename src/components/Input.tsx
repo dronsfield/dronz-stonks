@@ -1,20 +1,15 @@
 import { normalizeInput } from "@/lib/mixins";
 import React from "react";
 import { styled } from "styled-components";
+import { Label } from "./Label";
 
 const FormGroup = styled.label`
   display: block;
-  margin-bottom: 1em;
+  margin-bottom: 0.5em;
 
   &:last-child {
     margin-bottom: 0;
   }
-`;
-
-const Label = styled.div`
-  font-weight: bold;
-  font-size: 0.8em;
-  margin-bottom: 0.2em;
 `;
 
 const StyledInput = styled.input`
@@ -22,7 +17,7 @@ const StyledInput = styled.input`
   width: 100%;
   border: 2px solid #ccc;
   border-radius: 5px;
-  padding: 0.5em;
+  padding: 0.33em;
 `;
 
 interface InputProps {
