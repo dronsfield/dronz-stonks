@@ -153,10 +153,12 @@ export default function Home() {
       }
 
       const rsuValuePerMonth = currencyValue * Number(rsu || 0) * stockValue;
-      const esoValuePerMonth =
+      const esoValuePerMonth = Math.max(
         currencyValue *
-        Number(eso || 0) *
-        (stockValue - Number(strikePrice || 0));
+          Number(eso || 0) *
+          (stockValue - Number(strikePrice || 0)),
+        0
+      );
       const perMonth = rsuValuePerMonth + esoValuePerMonth;
 
       const rsuValuePerYear = 12 * rsuValuePerMonth;
