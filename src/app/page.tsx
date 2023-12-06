@@ -32,6 +32,11 @@ const formConfig = [
 ] as const;
 type InputId = (typeof formConfig)[number]["id"];
 
+const stockValueFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
 export default function Home() {
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = (evt) => {
     evt.preventDefault();
@@ -201,7 +206,7 @@ export default function Home() {
         ) : (
           <div>
             <Label>Stock value</Label>
-            <OutputValue>${stockValue}</OutputValue>
+            <OutputValue>{stockValueFormatter.format(stockValue)}</OutputValue>
             <br />
             <Label>Per year</Label>
             <OutputValue>
