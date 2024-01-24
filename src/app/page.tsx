@@ -5,6 +5,8 @@ import Input from "@/components/Input";
 import { styled } from "styled-components";
 import React from "react";
 import { Label } from "@/components/Label";
+import { calculate } from "@/lib/calculate";
+import Chart from "@/components/Chart";
 
 const Container = styled.div`
   margin: 1em auto;
@@ -152,18 +154,20 @@ export default function Home() {
         return;
       }
 
-      const rsuValuePerMonth = currencyValue * Number(rsu || 0) * stockValue;
-      const esoValuePerMonth = Math.max(
-        currencyValue *
-          Number(eso || 0) *
-          (stockValue - Number(strikePrice || 0)),
-        0
-      );
-      const perMonth = rsuValuePerMonth + esoValuePerMonth;
-
-      const rsuValuePerYear = 12 * rsuValuePerMonth;
-      const esoValuePerYear = 12 * esoValuePerMonth;
-      const perYear = 12 * perMonth;
+      const {
+        rsuValuePerMonth,
+        esoValuePerMonth,
+        perMonth,
+        rsuValuePerYear,
+        esoValuePerYear,
+        perYear,
+      } = calculate({
+        stockValue,
+        rsu: Number(rsu || 0),
+        eso: Number(eso || 0),
+        strikePrice: Number(strikePrice || 0),
+        currencyValue,
+      });
 
       const formatter = new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -229,6 +233,17 @@ export default function Home() {
                 " + " +
                 outputs.formatter.format(outputs.esoValuePerMonth)}
             </OutputDetail>
+            <br />
+            <Chart
+              {...{
+                stockValue,
+                rsu: Number(values.rsu || 0),
+                eso: Number(values.eso || 0),
+                strikePrice: Number(values.strikePrice || 0),
+                currencyValue,
+                currency: values.currency,
+              }}
+            />
           </div>
         )}
       </Container>
