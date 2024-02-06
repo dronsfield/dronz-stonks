@@ -29,7 +29,7 @@ const formConfig = [
   { id: "stock", label: "Stock symbol or price ($)" },
   { id: "rsu", label: "RSUs (per month)" },
   { id: "eso", label: "ESOs (per month)" },
-  { id: "strikePrice", label: "Strike price ($)" },
+  { id: "strikePrice", label: "ESO strike price ($)" },
   { id: "currency", label: "Currency (symbol)" },
 ] as const;
 type InputId = (typeof formConfig)[number]["id"];
