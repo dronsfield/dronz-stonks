@@ -99,9 +99,10 @@ export default function Home() {
       const curr = currency!.toLowerCase();
       if (curr === "usd") return resolve(1);
       // temporary bc api is broken
-      if (curr === "gbp") return resolve(0.75);
-      if (curr === "cad") return resolve(1.36);
-      if (curr === "eur") return resolve(0.89);
+      // updated: 2025-01-25
+      if (curr === "gbp") return resolve(0.8);
+      if (curr === "cad") return resolve(1.43);
+      if (curr === "eur") return resolve(0.95);
       fetch(
         `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd/${curr}.json`
       )
